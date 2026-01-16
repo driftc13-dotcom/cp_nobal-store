@@ -1,17 +1,45 @@
+import os
+import json
+import uuid
+import shutil
+import asyncio
+from urllib.parse import parse_qs
+
 from fastapi import FastAPI, UploadFile, Form, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
-import json, uuid, shutil
-from urllib.parse import parse_qs
+
+from bot import start_bot  # <-- запускаем бота
 
 app = FastAPI()
 
+# ──────────────────────
+# STATIC FILES
+# ──────────────────────
 app.mount("/public", StaticFiles(directory="public"), name="public")
-app.mount("/media", StaticFiles(directory="media"), name="media")
 
+# media может быть пустой, но папка должна существовать
+if os.path.isdir("media"):
+    app.mount("/media", StaticFiles(directory="media"), name="media")
+
+# ──────────────────────
+# CONFIG
+# ──────────────────────
 PRODUCTS_FILE = "products.json"
 ALLOWED_ADMINS = ["Arizonaa_cpm", "sukunuma"]
 
+# ──────────────────────
+# START BOT WITH SERVER
+# ──────────────────────
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(start_bot())
+
+# ──────────────────────
+# HELPERS
+# ──────────────────────
 def load_products():
+    if not os.path.exists(PRODUCTS_FILE):
+        return []
     with open(PRODUCTS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -31,6 +59,9 @@ def get_username(request: Request):
 
     return json.loads(user_data).get("username")
 
+# ──────────────────────
+# API
+# ──────────────────────
 @app.get("/products")
 def get_products():
     return load_products()
@@ -43,12 +74,13 @@ async def add_product(
     file: UploadFile = None
 ):
     if get_username(request) not in ALLOWED_ADMINS:
-        raise HTTPException(status_code=403)
+        raise HTTPException(status_code=403, detail="Access denied")
 
     products = load_products()
     filename = None
 
     if file:
+        os.makedirs("media", exist_ok=True)
         filename = f"{uuid.uuid4()}_{file.filename}"
         with open(f"media/{filename}", "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -68,10 +100,10 @@ async def edit_product(
     request: Request,
     id: str = Form(...),
     title: str = Form(...),
-    price: str = Form(...),
+    price: str = Form(...)
 ):
     if get_username(request) not in ALLOWED_ADMINS:
-        raise HTTPException(status_code=403)
+        raise HTTPException(status_code=403, detail="Access denied")
 
     products = load_products()
     for p in products:
@@ -89,9 +121,10 @@ async def delete_product(
     id: str = Form(...)
 ):
     if get_username(request) not in ALLOWED_ADMINS:
-        raise HTTPException(status_code=403)
+        raise HTTPException(status_code=403, detail="Access denied")
 
     products = load_products()
     products = [p for p in products if p["id"] != id]
+
     save_products(products)
     return {"ok": True}
