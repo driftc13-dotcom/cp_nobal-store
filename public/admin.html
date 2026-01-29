@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="style.css">
+<title>Админ-панель</title>
+</head>
+<body>
+
+<h2>🛠 Админ-панель Car Parking Shop</h2>
+
+<!-- Форма добавления товара -->
+<div class="card admin-form">
+  <h3>➕ Добавить товар</h3>
+  <form id="addForm">
+    <input type="text" id="newTitle" placeholder="Название товара" required>
+    <input type="text" id="newPrice" placeholder="Цена (например, 1000₽)" required>
+    <input type="file" id="newFile" accept="image/*,video/*">
+    <button type="submit">Добавить товар</button>
+  </form>
+  <div id="addStatus" class="status-message"></div>
+</div>
+
+<!-- Список товаров -->
+<div id="loading" class="loading">Загрузка товаров...</div>
+<div id="list"></div>
+
+<!-- Модальное окно редактирования -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h3>✏️ Редактировать товар</h3>
+    <form id="editForm">
+      <input type="hidden" id="editId">
+      <input type="text" id="editTitle" placeholder="Название товара" required>
+      <input type="text" id="editPrice" placeholder="Цена" required>
+      <button type="submit">Сохранить изменения</button>
+    </form>
+    <div id="editStatus" class="status-message"></div>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
